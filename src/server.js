@@ -81,6 +81,11 @@ app.use(csurf({ cookie: true }));
 // Static files
 app.use("/uploads", express.static("uploads"));
 
+// Serve frontend static files (assuming frontend is built to ../frontend/dist or similar)
+const path = require('path');
+const frontendPath = path.join(__dirname, '..', 'frontend', 'dist'); // Adjust path as needed
+app.use(express.static(frontendPath));
+
 // Database connection
 sequelize.authenticate()
   .then(() => console.log('Database connected successfully.'))
@@ -136,6 +141,16 @@ app.use('/api/v1/analytics', analyticsRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Catch-all handler: send back index.html for any non-API routes (SPA routing)
+app.get('*', (req, res) => {
+  // Only serve index.html for non-API routes
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  } else {
+    res.status(404).json({ error: 'API endpoint not found' });
+  }
 });
 
 // Error handling middleware
