@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import config from '../config.js';
 
 const { scrypt } = config.auth.crypto;

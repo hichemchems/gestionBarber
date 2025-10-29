@@ -7,7 +7,7 @@ import fileUpload from "express-fileupload";
 import csurf from "csurf";
 import { body, validationResult } from "express-validator";
 import path from "path";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 import config from "./config.js";
 import sequelize from "./models/index.js";
