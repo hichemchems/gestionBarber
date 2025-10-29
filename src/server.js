@@ -6,6 +6,8 @@ import rateLimit from "express-rate-limit";
 import fileUpload from "express-fileupload";
 import csurf from "csurf";
 import { body, validationResult } from "express-validator";
+import path from "path";
+import crypto from "crypto";
 
 import config from "./config.js";
 import sequelize from "./models/index.js";
@@ -82,11 +84,7 @@ app.use(csurf({ cookie: true }));
 app.use("/uploads", express.static("uploads"));
 
 // Serve frontend static files (assuming frontend is built to ../frontend/dist or similar)
-import path from 'path';
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, '..', 'frontend', 'dist'); // Adjust path as needed
+const frontendPath = path.join(process.cwd(), '..', 'frontend', 'dist'); // Adjust path as needed
 app.use(express.static(frontendPath));
 
 // Database connection
