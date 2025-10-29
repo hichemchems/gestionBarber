@@ -82,7 +82,10 @@ app.use(csurf({ cookie: true }));
 app.use("/uploads", express.static("uploads"));
 
 // Serve frontend static files (assuming frontend is built to ../frontend/dist or similar)
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '..', 'frontend', 'dist'); // Adjust path as needed
 app.use(express.static(frontendPath));
 
