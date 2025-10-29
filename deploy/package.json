@@ -2,7 +2,9 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite-node src/server.js",
-		"build": "vite build",
+		"build": "npm run build:frontend && npm run build:backend",
+		"build:frontend": "node --max-old-space-size=2048 node_modules/.bin/vite build --outDir dist/public",
+		"build:backend": "vite build --ssr src/server.js --outDir dist",
 		"start": "node dist/server.cjs",
 		"db:reset": "node --loader tsx/esm src/models/reset.js"
 	},
