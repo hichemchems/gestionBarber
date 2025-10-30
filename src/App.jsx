@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogIn, Loader2, User } from 'lucide-react'; // Icônes pour l'interface
+import AdminDashboard from './components/AdminDashboard.jsx';
+import EmployeeDashboard from './components/EmployeeDashboard.jsx';
 
 /**
  * Fonction utilitaire pour résoudre l'URL de base de l'API.
@@ -79,10 +81,11 @@ const LoginComponent = ({ setAuthStatus }) => {
 
       if (response.ok) {
         // Connexion réussie : le back-end a défini le cookie d'accès
+        const data = await response.json();
         setMessage("Connexion réussie ! Bienvenue.");
         setMessageType('success');
-        // Simuler la mise à jour de l'état d'authentification
-        setTimeout(() => setAuthStatus(true), 1500); 
+        // Mettre à jour l'état d'authentification avec les données utilisateur
+        setTimeout(() => setAuthStatus(true, data.user), 1500);
       } else {
         const errorData = await response.json();
         const errorMessage = errorData.message || "Identifiants invalides ou problème serveur.";
@@ -191,36 +194,67 @@ const LoginComponent = ({ setAuthStatus }) => {
 // Composant Root de l'Application (Gestion de l'état global)
 // =================================================================
 
-const DashboardPlaceholder = () => (
-    <div className="p-10 text-center bg-white rounded-xl shadow-xl max-w-lg mx-auto mt-20">
-        <User className="h-12 w-12 text-green-500 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Tableau de Bord</h3>
-        <p className="text-gray-600">Vous êtes connecté ! Le reste de l'application sera affiché ici.</p>
-        <button
-            onClick={() => {
-                // Pour l'exemple, on simule la déconnexion
-                window.location.reload(); 
-            }}
-            className="mt-6 py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition duration-150"
-        >
-            Déconnexion (Simulée)
-        </button>
-    </div>
-);
-
 const App = () => {
-    // État pour simuler l'authentification (doit être remplacé par un contexte ou un état global)
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // Si authentifié, affiche le tableau de bord (placeholder)
-    if (isAuthenticated) {
-        return <DashboardPlaceholder />;
+    useEffect(() => {
+        // Vérifier si l'utilisateur est déjà connecté au chargement
+        const checkAuth = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+                    credentials: 'include',
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data.user);
+                    setIsAuthenticated(true);
+                }
+            } catch (error) {
+                console.error('Erreur lors de la vérification de l\'authentification:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkAuth();
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Erreur lors de la déconnexion:', error);
+        }
+        setIsAuthenticated(false);
+        setUser(null);
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="animate-spin h-10 w-10 text-indigo-600" />
+            </div>
+        );
     }
 
-    // Si non authentifié, affiche le formulaire de connexion
+    if (isAuthenticated && user) {
+        if (user.role === 'admin' || user.role === 'superAdmin') {
+            return <AdminDashboard user={user} onLogout={handleLogout} />;
+        } else {
+            return <EmployeeDashboard user={user} onLogout={handleLogout} />;
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <LoginComponent setAuthStatus={setIsAuthenticated} />
+            <LoginComponent setAuthStatus={(auth, userData) => {
+                setIsAuthenticated(auth);
+                setUser(userData);
+            }} />
         </div>
     );
 };
