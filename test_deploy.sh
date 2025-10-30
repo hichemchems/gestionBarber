@@ -13,11 +13,13 @@ LOG_FILE="/home/dije1636/logs/app_errors.log"  # Chemin vers le fichier de logs 
 
 # Fonction pour logger les erreurs
 log_error() {
+    mkdir -p "$(dirname "$LOG_FILE")"
     echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: $1" >> "$LOG_FILE"
 }
 
 # Fonction pour logger les succès
 log_success() {
+    mkdir -p "$(dirname "$LOG_FILE")"
     echo "$(date '+%Y-%m-%d %H:%M:%S') - SUCCESS: $1" >> "$LOG_FILE"
 }
 
