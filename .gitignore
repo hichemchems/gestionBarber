@@ -3,4 +3,4 @@ database.sqlite
 .env
 .env.production
 dist/
-deploy/
+# deploy/  # Temporarily uncommented for deployment
