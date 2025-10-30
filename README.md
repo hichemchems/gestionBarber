@@ -186,3 +186,4 @@ Ce projet est sous licence MIT.
 # gestionBarber
 # imadLoft
 # imadLoft
+# imadLoft
