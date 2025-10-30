@@ -9,7 +9,7 @@ echo "🧪 Démarrage des tests post-déploiement..."
 DOMAIN="loft-barber.com"  # Votre domaine réel
 API_URL="https://$DOMAIN"
 HEALTH_URL="$API_URL/health"
-LOG_FILE="/home/dije1636/logs/app_errors.log"  # Chemin vers le fichier de logs d'erreur
+LOG_FILE="/home/dije1636/loft-barber.com/backend/logs/app_errors.log"  # Chemin vers le fichier de logs d'erreur
 
 # Fonction pour logger les erreurs
 log_error() {
@@ -108,4 +108,4 @@ echo "- Logs: Vérifiés"
 echo ""
 echo "📝 Logs enregistrés dans: $LOG_FILE"
 echo "🔄 Pensez à configurer un cron job pour exécuter ce script régulièrement:"
-echo "   0 */6 * * * /chemin/vers/test_deploy.sh"
+echo "   0 */6 * * * /home/dije1636/loft-barber.com/backend/test_deploy.sh"
