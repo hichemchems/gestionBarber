@@ -1480,7 +1480,11 @@ if (process.env.NODE_ENV === "production") {
 app.use("/uploads", express.static("uploads"));
 const frontendPath = path.join(process.cwd(), "dist", "public");
 app.use(express.static(frontendPath));
-sequelize.authenticate().then(() => console.log("Database connected successfully.")).catch((err) => console.error("Database connection failed:", err));
+if (process.env.NODE_ENV === "production") {
+  sequelize.authenticate().then(() => console.log("Database connected successfully.")).catch((err) => console.error("Database connection failed:", err));
+} else {
+  console.log("Skipping database connection in local development mode.");
+}
 const { url } = config.server;
 const swaggerOptions = {
   swaggerDefinition: {

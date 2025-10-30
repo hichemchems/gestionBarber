@@ -6,10 +6,10 @@
 echo "🧪 Démarrage des tests post-déploiement..."
 
 # Variables (à adapter selon votre configuration)
-DOMAIN="votre-domaine.com"  # Remplacez par votre domaine réel
-API_URL="https://$DOMAIN/api"
+DOMAIN="localhost:3001"  # Remplacez par votre domaine réel
+API_URL="http://$DOMAIN"
 HEALTH_URL="$API_URL/health"
-LOG_FILE="/home/dije1636/logs/app_errors.log"  # Chemin vers le fichier de logs d'erreur
+LOG_FILE="./test_errors.log"  # Chemin vers le fichier de logs d'erreur
 
 # Fonction pour logger les erreurs
 log_error() {
