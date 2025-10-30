@@ -1471,9 +1471,14 @@ app.use(fileUpload({
   abortOnLimit: true
 }));
 app.use(cookieParser());
-app.use(csurf({ cookie: true }));
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    csurf({ cookie: true })(req, res, next);
+  });
+}
 app.use("/uploads", express.static("uploads"));
-const frontendPath = path.join(process.cwd(), "..", "frontend", "dist");
+const frontendPath = path.join(process.cwd(), "dist", "public");
 app.use(express.static(frontendPath));
 sequelize.authenticate().then(() => console.log("Database connected successfully.")).catch((err) => console.error("Database connection failed:", err));
 const { url } = config.server;
@@ -1522,7 +1527,7 @@ app.get("/health", (req, res) => {
 });
 app.get("*", (req, res) => {
   if (!req.path.startsWith("/api")) {
-    res.sendFile(path.join(frontendPath, "index.html"));
+    res.sendFile(path.join(process.cwd(), "index.html"));
   } else {
     res.status(404).json({ error: "API endpoint not found" });
   }

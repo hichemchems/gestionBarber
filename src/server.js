@@ -77,20 +77,29 @@ app.use(fileUpload({
 // Cookie parser
 app.use(cookieParser());
 
-// CSRF protection
-app.use(csurf({ cookie: true }));
+// CSRF protection - disabled for API routes
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    csurf({ cookie: true })(req, res, next);
+  });
+}
 
 // Static files
 app.use("/uploads", express.static("uploads"));
 
-// Serve frontend static files (assuming frontend is built to ../frontend/dist or similar)
-const frontendPath = path.join(process.cwd(), '..', 'frontend', 'dist'); // Adjust path as needed
+// Serve frontend static files (built to dist/public)
+const frontendPath = path.join(process.cwd(), 'dist', 'public');
 app.use(express.static(frontendPath));
 
-// Database connection
-sequelize.authenticate()
-  .then(() => console.log('Database connected successfully.'))
-  .catch(err => console.error('Database connection failed:', err));
+// Database connection - skip in local development
+if (process.env.NODE_ENV === 'production') {
+  sequelize.authenticate()
+    .then(() => console.log('Database connected successfully.'))
+    .catch(err => console.error('Database connection failed:', err));
+} else {
+  console.log('Skipping database connection in local development mode.');
+}
 
 // Définir l'URL du serveur via le env
 const { url } = config.server;
@@ -148,7 +157,7 @@ app.get('/health', (req, res) => {
 app.get('*', (req, res) => {
   // Only serve index.html for non-API routes
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    res.sendFile(path.join(process.cwd(), 'index.html'));
   } else {
     res.status(404).json({ error: 'API endpoint not found' });
   }
