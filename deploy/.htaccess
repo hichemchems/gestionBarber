@@ -1,0 +1,11 @@
+# Configuration pour o2switch - Application Node.js
+PassengerEnabled On
+PassengerAppRoot /home/dije1636/gestionBarber/deploy
+PassengerAppType node
+PassengerStartupFile dist/server.cjs
+
+# Redirections pour SPA (optionnel, si nécessaire)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]
