@@ -17,7 +17,7 @@ if ! command -v npm &> /dev/null; then
 fi
 
 echo "📦 Installation des dépendances..."
-npm install
+npm install --include=dev
 
 if [ $? -ne 0 ]; then
     echo "❌ Échec de l'installation des dépendances"
@@ -63,5 +63,5 @@ echo ""
 echo "📁 Structure recommandée sur o2switch :"
 echo "- frontend/ (votre app frontend)"
 echo "- backend/ (contenu du dossier deploy/)"
-# Copier index.html dans dist/public pour le frontend
-cp index.html deploy/dist/public/
+# Copier index.html dans dist pour le frontend
+cp index.html deploy/dist/
