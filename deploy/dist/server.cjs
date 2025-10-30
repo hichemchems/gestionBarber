@@ -1481,7 +1481,10 @@ app.use("/uploads", express.static("uploads"));
 const frontendPath = path.join(process.cwd(), "dist", "public");
 app.use(express.static(frontendPath));
 if (process.env.NODE_ENV === "production") {
-  sequelize.authenticate().then(() => console.log("Database connected successfully.")).catch((err) => console.error("Database connection failed:", err));
+  sequelize.authenticate().then(() => console.log("Database connected successfully.")).catch((err) => {
+    console.error("Database connection failed:", err);
+    console.log("Application will continue without database connection. Some features may not work.");
+  });
 } else {
   console.log("Skipping database connection in local development mode.");
 }
