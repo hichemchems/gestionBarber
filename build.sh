@@ -63,3 +63,5 @@ echo ""
 echo "📁 Structure recommandée sur o2switch :"
 echo "- frontend/ (votre app frontend)"
 echo "- backend/ (contenu du dossier deploy/)"
+# Copier index.html dans dist/public pour le frontend
+cp index.html deploy/dist/public/

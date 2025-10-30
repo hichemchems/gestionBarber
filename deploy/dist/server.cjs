@@ -1,1 +1,1588 @@
-"use strict";Object.defineProperty(exports,Symbol.toStringTag,{value:"Module"});const E=require("express"),re=require("cors"),oe=require("helmet"),ne=require("cookie-parser"),ie=require("express-rate-limit"),le=require("express-fileupload"),ce=require("csurf"),n=require("express-validator"),G=require("path"),de=require("dotenv"),r=require("sequelize"),q=require("jsonwebtoken");require("jwt-decode");const J=require("swagger-ui-express"),ue=require("swagger-jsdoc");require("bcryptjs");const Y={};de.config();const pe={url:process.env.SERVER_URL||`http://localhost:${process.env.PORT||3e3}`,host:process.env.HOST||"0.0.0.0",port:process.env.PORT||3e3,secure:process.env.SECURE||!1,cors:process.env.CORS||""},ye={dialect:process.env.DATABASE_DIALECT||"mysql",database:process.env.DATABASE_DBNAME,user:process.env.DATABASE_USER,password:process.env.DATABASE_PASSWORD,host:process.env.DATABASE_HOST,port:process.env.DATABASE_PORT,ssl:process.env.DATABASE_SSL||!1},me={accessToken:{type:process.env.ACCESS_TOKEN_TYPE||"Bearer",algorithm:process.env.ACCESS_TOKEN_ALGORITHM||"HS256",secret:process.env.ACCESS_TOKEN_SECRET||"Acc3ssTok3nS3c3t!",expiresIn:process.env.ACCESS_TOKEN_EXPIRES_IN_MS||3600*1e3,audience:process.env.ACCESS_TOKEN_AUDIENCE||"my_backend_api",issuer:process.env.ACCESS_TOKEN_ISSUER||"my_authentication_server"},crypto:{scrypt:{saltLength:process.env.SCRYPT_SALT_LENGTH||16,hashLength:process.env.SCRYPT_HASH_LENGTH||64,cost:process.env.SCRYPT_COST||Math.pow(2,17),blockSize:process.env.SCRYPT_BLOCK_SIZE||8,parallelization:process.env.SCRYPT_PARALLELIZATION||1,maxmem:process.env.SCRYPT_MAXMEM|134220800},unsaltedHashAlgorithm:process.env.FAST_HASH_ALGORITHM||"sha256"}},v={auth:me,database:ye,server:pe},j=new r.Sequelize(v.database.database,v.database.user,v.database.password,{host:v.database.host,port:v.database.port,dialect:v.database.dialect,ssl:v.database.ssl,logging:!1,define:{timestamps:!0,underscored:!0}}),g=j.define("User",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},username:{type:r.DataTypes.STRING,allowNull:!1,unique:!0},email:{type:r.DataTypes.STRING,allowNull:!1,unique:!0,validate:{isEmail:!0}},passwordHash:{type:r.DataTypes.STRING,allowNull:!1},role:{type:r.DataTypes.ENUM("superAdmin","admin","user"),defaultValue:"user"},avatar:{type:r.DataTypes.STRING,allowNull:!0},isActive:{type:r.DataTypes.BOOLEAN,defaultValue:!0}},{tableName:"users"}),c=j.define("Employee",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},userId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"users",key:"id"}},name:{type:r.DataTypes.STRING,allowNull:!1},position:{type:r.DataTypes.STRING,allowNull:!1},hireDate:{type:r.DataTypes.DATE,allowNull:!1},deductionPercentage:{type:r.DataTypes.DECIMAL(5,2),defaultValue:0},contract:{type:r.DataTypes.STRING,allowNull:!0},employmentDeclaration:{type:r.DataTypes.STRING,allowNull:!0},certification:{type:r.DataTypes.STRING,allowNull:!0}},{tableName:"employees"}),S=j.define("Package",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},name:{type:r.DataTypes.STRING,allowNull:!1},price:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},isActive:{type:r.DataTypes.BOOLEAN,defaultValue:!0}},{tableName:"packages"}),I=j.define("Sale",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},employeeId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"employees",key:"id"}},packageId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"packages",key:"id"}},clientName:{type:r.DataTypes.STRING,allowNull:!1},amount:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},date:{type:r.DataTypes.DATE,defaultValue:r.DataTypes.NOW},description:{type:r.DataTypes.TEXT,allowNull:!0}},{tableName:"sales"}),b=j.define("Receipt",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},employeeId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"employees",key:"id"}},clientName:{type:r.DataTypes.STRING,allowNull:!1},amount:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},date:{type:r.DataTypes.DATE,defaultValue:r.DataTypes.NOW},description:{type:r.DataTypes.TEXT,allowNull:!0}},{tableName:"receipts"}),O=j.define("Expense",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},category:{type:r.DataTypes.STRING,allowNull:!1},amount:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},date:{type:r.DataTypes.DATE,defaultValue:r.DataTypes.NOW},description:{type:r.DataTypes.TEXT,allowNull:!0},createdBy:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"users",key:"id"}}},{tableName:"expenses"}),K=j.define("Salary",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},employeeId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"employees",key:"id"}},baseSalary:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},commissionPercentage:{type:r.DataTypes.DECIMAL(5,2),defaultValue:0},totalSalary:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},periodStart:{type:r.DataTypes.DATE,allowNull:!1},periodEnd:{type:r.DataTypes.DATE,allowNull:!1}},{tableName:"salaries"}),_=j.define("AdminCharge",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},rent:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},charges:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},operatingCosts:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},electricity:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},salaries:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},totalCharges:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},month:{type:r.DataTypes.INTEGER,allowNull:!1},year:{type:r.DataTypes.INTEGER,allowNull:!1}},{tableName:"admin_charges"}),ee=j.define("Goal",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},employeeId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"employees",key:"id"}},monthlyObjective:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},dailyObjective:{type:r.DataTypes.DECIMAL(10,2),allowNull:!1},month:{type:r.DataTypes.INTEGER,allowNull:!1},year:{type:r.DataTypes.INTEGER,allowNull:!1},remainingAmount:{type:r.DataTypes.DECIMAL(10,2),defaultValue:0},isCompleted:{type:r.DataTypes.BOOLEAN,defaultValue:!1}},{tableName:"goals"}),ae=j.define("Alert",{id:{type:r.DataTypes.INTEGER,primaryKey:!0,autoIncrement:!0},employeeId:{type:r.DataTypes.INTEGER,allowNull:!1,references:{model:"employees",key:"id"}},message:{type:r.DataTypes.TEXT,allowNull:!1},type:{type:r.DataTypes.ENUM("daily","monthly","warning"),defaultValue:"daily"},isRead:{type:r.DataTypes.BOOLEAN,defaultValue:!1},date:{type:r.DataTypes.DATE,defaultValue:r.DataTypes.NOW}},{tableName:"alerts"});g.hasOne(c,{foreignKey:"userId",as:"employee"});g.hasMany(O,{foreignKey:"createdBy",as:"expenses"});c.belongsTo(g,{foreignKey:"userId",as:"user"});c.hasMany(I,{foreignKey:"employeeId",as:"sales"});c.hasMany(b,{foreignKey:"employeeId",as:"receipts"});c.hasMany(K,{foreignKey:"employeeId",as:"salaries"});c.hasMany(ee,{foreignKey:"employeeId",as:"goals"});c.hasMany(ae,{foreignKey:"employeeId",as:"alerts"});S.hasMany(I,{foreignKey:"packageId",as:"sales"});I.belongsTo(c,{foreignKey:"employeeId",as:"employee"});I.belongsTo(S,{foreignKey:"packageId",as:"package"});b.belongsTo(c,{foreignKey:"employeeId",as:"employee"});O.belongsTo(g,{foreignKey:"createdBy",as:"creator"});K.belongsTo(c,{foreignKey:"employeeId",as:"employee"});ee.belongsTo(c,{foreignKey:"employeeId",as:"employee"});ae.belongsTo(c,{foreignKey:"employeeId",as:"employee"});const{accessToken:C}=v.auth;function te(t){return q.sign(t,C.secret,{algorithm:C.algorithm,expiresIn:C.expiresIn,audience:C.audience,issuer:C.issuer})}function fe(t){try{return q.verify(t,C.secret,{algorithms:[C.algorithm],audience:C.audience,issuer:C.issuer})}catch(a){return console.error("JWT verification failed:",a.message),null}}const{scrypt:N}=v.auth.crypto;async function se(t){const a=Y.randomBytes(N.saltLength).toString("hex"),e=Y.scryptSync(t,a,N.hashLength,{N:N.cost,r:N.blockSize,p:N.parallelization,maxmem:N.maxmem}).toString("hex");return`${a}:${e}`}async function he(t,a){const[e,o]=a.split(":"),s=Y.scryptSync(t,e,N.hashLength,{N:N.cost,r:N.blockSize,p:N.parallelization,maxmem:N.maxmem}).toString("hex");return o===s}const $=E.Router();$.post("/register",[n.body("username").isLength({min:3}).trim().escape(),n.body("email").isEmail().normalizeEmail(),n.body("password").isLength({min:14}).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/),n.body("role").optional().isIn(["superAdmin","admin","user"])],h,async(t,a)=>{try{const{username:e,email:o,password:s,role:i="user"}=t.body;if(await g.findOne({where:{email:o}}))return a.status(400).json({error:"User already exists"});const p=await se(s),y=await g.create({username:e,email:o,passwordHash:p,role:i}),w=te({id:y.id,username:y.username,email:y.email,role:y.role});a.status(201).json({message:"User registered successfully",user:{id:y.id,username:y.username,email:y.email,role:y.role},token:w})}catch(e){console.error("Registration error:",e),a.status(500).json({error:"Internal server error"})}});$.post("/login",[n.body("email").isEmail().normalizeEmail(),n.body("password").notEmpty()],h,async(t,a)=>{try{const{email:e,password:o}=t.body,s=await g.findOne({where:{email:e}});if(!s)return a.status(401).json({error:"Invalid credentials"});if(!await he(o,s.passwordHash))return a.status(401).json({error:"Invalid credentials"});const l=te({id:s.id,username:s.username,email:s.email,role:s.role});a.cookie("accessToken",l,{httpOnly:!0,secure:process.env.NODE_ENV==="production",maxAge:3600*1e3}),a.json({message:"Login successful",user:{id:s.id,username:s.username,email:s.email,role:s.role},token:l})}catch(e){console.error("Login error:",e),a.status(500).json({error:"Internal server error"})}});$.post("/logout",(t,a)=>{a.clearCookie("accessToken"),a.json({message:"Logout successful"})});$.get("/me",d,async(t,a)=>{try{const e=await g.findByPk(t.user.id,{include:[{model:c,as:"employee"}]});if(!e)return a.status(404).json({error:"User not found"});a.json({user:{id:e.id,username:e.username,email:e.email,role:e.role,avatar:e.avatar,employee:e.employee}})}catch(e){console.error("Get profile error:",e),a.status(500).json({error:"Internal server error"})}});const U=E.Router();U.get("/",d,f(["admin","superAdmin"]),async(t,a)=>{try{const e=await g.findAll({include:[{model:c,as:"employee"}],attributes:{exclude:["passwordHash"]}});a.json({users:e})}catch(e){console.error("Get users error:",e),a.status(500).json({error:"Internal server error"})}});U.post("/",d,f(["admin","superAdmin"]),[n.body("username").isLength({min:3}).trim().escape(),n.body("email").isEmail().normalizeEmail(),n.body("password").isLength({min:14}).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/),n.body("name").notEmpty().trim().escape(),n.body("position").notEmpty().trim().escape(),n.body("hireDate").isISO8601(),n.body("deductionPercentage").optional().isFloat({min:0,max:100})],h,async(t,a)=>{try{const{username:e,email:o,password:s,name:i,position:l,hireDate:p,deductionPercentage:y=0}=t.body;if(await g.findOne({where:{email:o}}))return a.status(400).json({error:"User already exists"});const T=await se(s);let R=null,k=null,x=null,L=null;if(t.files){const B=G.join(process.cwd(),"uploads");if(t.files.avatar){const u=t.files.avatar;R=`avatar_${Date.now()}_${u.name}`,await u.mv(G.join(B,R))}if(t.files.contract){const u=t.files.contract;k=`contract_${Date.now()}_${u.name}`,await u.mv(G.join(B,k))}if(t.files.employmentDeclaration){const u=t.files.employmentDeclaration;x=`employment_declaration_${Date.now()}_${u.name}`,await u.mv(G.join(B,x))}if(t.files.certification){const u=t.files.certification;L=`certification_${Date.now()}_${u.name}`,await u.mv(G.join(B,L))}}const D=await g.create({username:e,email:o,passwordHash:T,role:"user",avatar:R}),M=await c.create({userId:D.id,name:i,position:l,hireDate:p,deductionPercentage:y,contract:k,employmentDeclaration:x,certification:L});a.status(201).json({message:"User created successfully",user:{id:D.id,username:D.username,email:D.email,role:D.role,avatar:D.avatar,employee:M}})}catch(e){console.error("Create user error:",e),a.status(500).json({error:"Internal server error"})}});U.put("/:id",d,f(["admin","superAdmin"]),[n.body("username").optional().isLength({min:3}).trim().escape(),n.body("email").optional().isEmail().normalizeEmail(),n.body("role").optional().isIn(["superAdmin","admin","user"]),n.body("isActive").optional().isBoolean()],h,async(t,a)=>{try{const{id:e}=t.params,o=t.body,s=await g.findByPk(e);if(!s)return a.status(404).json({error:"User not found"});await s.update(o),a.json({message:"User updated successfully",user:{id:s.id,username:s.username,email:s.email,role:s.role,isActive:s.isActive}})}catch(e){console.error("Update user error:",e),a.status(500).json({error:"Internal server error"})}});U.put("/:id/deduction-percentage",d,f(["admin","superAdmin"]),[n.body("deductionPercentage").isFloat({min:0,max:100})],h,async(t,a)=>{try{const{id:e}=t.params,{deductionPercentage:o}=t.body,s=await c.findOne({where:{userId:e}});if(!s)return a.status(404).json({error:"Employee not found"});await s.update({deductionPercentage:o}),a.json({message:"Deduction percentage updated successfully",employee:{id:s.id,userId:s.userId,deductionPercentage:s.deductionPercentage}})}catch(e){console.error("Update deduction percentage error:",e),a.status(500).json({error:"Internal server error"})}});U.delete("/:id",d,f(["superAdmin"]),async(t,a)=>{try{const{id:e}=t.params,o=await g.findByPk(e);if(!o)return a.status(404).json({error:"User not found"});await o.destroy(),a.json({message:"User deleted successfully"})}catch(e){console.error("Delete user error:",e),a.status(500).json({error:"Internal server error"})}});const V=E.Router();V.get("/",d,async(t,a)=>{try{const e=await S.findAll({where:{isActive:!0},order:[["name","ASC"]]});a.json({packages:e})}catch(e){console.error("Get packages error:",e),a.status(500).json({error:"Internal server error"})}});V.post("/",d,f(["admin","superAdmin"]),[n.body("name").notEmpty().trim().escape(),n.body("price").isFloat({min:0})],h,async(t,a)=>{try{const{name:e,price:o}=t.body,s=await S.create({name:e,price:o});a.status(201).json({message:"Package created successfully",package:s})}catch(e){console.error("Create package error:",e),a.status(500).json({error:"Internal server error"})}});V.put("/:id",d,f(["admin","superAdmin"]),[n.body("name").optional().notEmpty().trim().escape(),n.body("price").optional().isFloat({min:0}),n.body("isActive").optional().isBoolean()],h,async(t,a)=>{try{const{id:e}=t.params,o=t.body,s=await S.findByPk(e);if(!s)return a.status(404).json({error:"Package not found"});await s.update(o),a.json({message:"Package updated successfully",package:s})}catch(e){console.error("Update package error:",e),a.status(500).json({error:"Internal server error"})}});V.delete("/:id",d,f(["admin","superAdmin"]),async(t,a)=>{try{const{id:e}=t.params,o=await S.findByPk(e);if(!o)return a.status(404).json({error:"Package not found"});await o.update({isActive:!1}),a.json({message:"Package deactivated successfully"})}catch(e){console.error("Delete package error:",e),a.status(500).json({error:"Internal server error"})}});const F=E.Router();F.get("/employee/:employeeId",d,async(t,a)=>{try{const{employeeId:e}=t.params;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const s=await c.findOne({where:{userId:t.user.id}});if(!s||s.id!=e)return a.status(403).json({error:"Access denied"})}const o=await I.findAll({where:{employeeId:e},include:[{model:S,as:"package"},{model:c,as:"employee",include:[{model:User,as:"user"}]}],order:[["date","DESC"]]});a.json({sales:o})}catch(e){console.error("Get sales error:",e),a.status(500).json({error:"Internal server error"})}});F.post("/employee/:employeeId",d,[n.body("packageId").isInt({min:1}),n.body("clientName").notEmpty().trim().escape(),n.body("description").optional().trim().escape()],h,async(t,a)=>{try{const{employeeId:e}=t.params,{packageId:o,clientName:s,description:i}=t.body;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const T=await c.findOne({where:{userId:t.user.id}});if(!T||T.id!=e)return a.status(403).json({error:"Access denied"})}if(!await c.findByPk(e))return a.status(404).json({error:"Employee not found"});const p=await S.findOne({where:{id:o,isActive:!0}});if(!p)return a.status(404).json({error:"Package not found or inactive"});const y=await I.create({employeeId:e,packageId:o,clientName:s,amount:p.price,description:i}),w=await I.findByPk(y.id,{include:[{model:S,as:"package"},{model:c,as:"employee",include:[{model:User,as:"user"}]}]});a.status(201).json({message:"Sale created successfully",sale:w})}catch(e){console.error("Create sale error:",e),a.status(500).json({error:"Internal server error"})}});F.put("/employee/:employeeId/sale/:saleId",d,[n.body("clientName").optional().notEmpty().trim().escape(),n.body("amount").optional().isFloat({min:0}),n.body("description").optional().trim().escape()],h,async(t,a)=>{try{const{employeeId:e,saleId:o}=t.params,s=t.body;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const p=await c.findOne({where:{userId:t.user.id}});if(!p||p.id!=e)return a.status(403).json({error:"Access denied"})}const i=await I.findOne({where:{id:o,employeeId:e}});if(!i)return a.status(404).json({error:"Sale not found"});await i.update(s);const l=await I.findByPk(o,{include:[{model:S,as:"package"},{model:c,as:"employee",include:[{model:User,as:"user"}]}]});a.json({message:"Sale updated successfully",sale:l})}catch(e){console.error("Update sale error:",e),a.status(500).json({error:"Internal server error"})}});F.delete("/employee/:employeeId/sale/:saleId",d,async(t,a)=>{try{const{employeeId:e,saleId:o}=t.params;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const i=await c.findOne({where:{userId:t.user.id}});if(!i||i.id!=e)return a.status(403).json({error:"Access denied"})}const s=await I.findOne({where:{id:o,employeeId:e}});if(!s)return a.status(404).json({error:"Sale not found"});await s.destroy(),a.json({message:"Sale deleted successfully"})}catch(e){console.error("Delete sale error:",e),a.status(500).json({error:"Internal server error"})}});const z=E.Router();z.get("/employee/:employeeId",d,async(t,a)=>{try{const{employeeId:e}=t.params;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const s=await c.findOne({where:{userId:t.user.id}});if(!s||s.id!=e)return a.status(403).json({error:"Access denied"})}const o=await b.findAll({where:{employeeId:e},include:[{model:c,as:"employee",include:[{model:User,as:"user"}]}],order:[["date","DESC"]]});a.json({receipts:o})}catch(e){console.error("Get receipts error:",e),a.status(500).json({error:"Internal server error"})}});z.post("/employee/:employeeId",d,[n.body("clientName").notEmpty().trim().escape(),n.body("amount").isFloat({min:0}),n.body("description").optional().trim().escape()],h,async(t,a)=>{try{const{employeeId:e}=t.params,{clientName:o,amount:s,description:i}=t.body;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const w=await c.findOne({where:{userId:t.user.id}});if(!w||w.id!=e)return a.status(403).json({error:"Access denied"})}if(!await c.findByPk(e))return a.status(404).json({error:"Employee not found"});const p=await b.create({employeeId:e,clientName:o,amount:s,description:i}),y=await b.findByPk(p.id,{include:[{model:c,as:"employee",include:[{model:User,as:"user"}]}]});a.status(201).json({message:"Receipt added successfully",receipt:y})}catch(e){console.error("Add receipt error:",e),a.status(500).json({error:"Internal server error"})}});z.put("/employee/:employeeId/receipt/:receiptId",d,[n.body("clientName").optional().notEmpty().trim().escape(),n.body("amount").optional().isFloat({min:0}),n.body("description").optional().trim().escape()],h,async(t,a)=>{try{const{employeeId:e,receiptId:o}=t.params,s=t.body;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const p=await c.findOne({where:{userId:t.user.id}});if(!p||p.id!=e)return a.status(403).json({error:"Access denied"})}const i=await b.findOne({where:{id:o,employeeId:e}});if(!i)return a.status(404).json({error:"Receipt not found"});await i.update(s);const l=await b.findByPk(o,{include:[{model:c,as:"employee",include:[{model:User,as:"user"}]}]});a.json({message:"Receipt updated successfully",receipt:l})}catch(e){console.error("Update receipt error:",e),a.status(500).json({error:"Internal server error"})}});z.delete("/employee/:employeeId/receipt/:receiptId",d,async(t,a)=>{try{const{employeeId:e,receiptId:o}=t.params;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const i=await c.findOne({where:{userId:t.user.id}});if(!i||i.id!=e)return a.status(403).json({error:"Access denied"})}const s=await b.findOne({where:{id:o,employeeId:e}});if(!s)return a.status(404).json({error:"Receipt not found"});await s.destroy(),a.json({message:"Receipt deleted successfully"})}catch(e){console.error("Delete receipt error:",e),a.status(500).json({error:"Internal server error"})}});const H=E.Router();H.get("/",d,f(["admin","superAdmin"]),async(t,a)=>{try{const e=await O.findAll({include:[{model:g,as:"creator"}],order:[["date","DESC"]]});a.json({expenses:e})}catch(e){console.error("Get expenses error:",e),a.status(500).json({error:"Internal server error"})}});H.post("/",d,[n.body("category").notEmpty().trim().escape(),n.body("amount").isFloat({min:0}),n.body("description").optional().trim().escape()],h,async(t,a)=>{try{const{category:e,amount:o,description:s}=t.body,i=await O.create({category:e,amount:o,description:s,createdBy:t.user.id}),l=await O.findByPk(i.id,{include:[{model:g,as:"creator"}]});a.status(201).json({message:"Expense created successfully",expense:l})}catch(e){console.error("Create expense error:",e),a.status(500).json({error:"Internal server error"})}});H.put("/:id",d,[n.body("category").optional().notEmpty().trim().escape(),n.body("amount").optional().isFloat({min:0}),n.body("description").optional().trim().escape()],h,async(t,a)=>{try{const{id:e}=t.params,o=t.body,s=await O.findByPk(e);if(!s)return a.status(404).json({error:"Expense not found"});if(t.user.role!=="superAdmin"&&t.user.role!=="admin"&&s.createdBy!==t.user.id)return a.status(403).json({error:"Access denied"});await s.update(o);const i=await O.findByPk(e,{include:[{model:g,as:"creator"}]});a.json({message:"Expense updated successfully",expense:i})}catch(e){console.error("Update expense error:",e),a.status(500).json({error:"Internal server error"})}});H.delete("/:id",d,async(t,a)=>{try{const{id:e}=t.params,o=await O.findByPk(e);if(!o)return a.status(404).json({error:"Expense not found"});if(t.user.role!=="superAdmin"&&t.user.role!=="admin"&&o.createdBy!==t.user.id)return a.status(403).json({error:"Access denied"});await o.destroy(),a.json({message:"Expense deleted successfully"})}catch(e){console.error("Delete expense error:",e),a.status(500).json({error:"Internal server error"})}});const X=E.Router();X.get("/employee/:employeeId",d,async(t,a)=>{try{const{employeeId:e}=t.params;if(t.user.role!=="superAdmin"&&t.user.role!=="admin"){const s=await c.findOne({where:{userId:t.user.id}});if(!s||s.id!=e)return a.status(403).json({error:"Access denied"})}const o=await K.findAll({where:{employeeId:e},include:[{model:c,as:"employee"}],order:[["periodEnd","DESC"]]});a.json({salaries:o})}catch(e){console.error("Get salaries error:",e),a.status(500).json({error:"Internal server error"})}});X.post("/generate",d,f(["admin","superAdmin"]),[n.body("periodStart").isISO8601(),n.body("periodEnd").isISO8601()],h,async(t,a)=>{try{const{periodStart:e,periodEnd:o}=t.body,s=await c.findAll(),i=[];for(const l of s){const y=(await b.findAll({where:{employeeId:l.id,date:{[r.Op.between]:[e,o]}}})).reduce((D,M)=>D+parseFloat(M.amount),0),T=(await I.findAll({where:{employeeId:l.id,date:{[r.Op.between]:[e,o]}}})).reduce((D,M)=>D+parseFloat(M.amount),0),R=await _.findOne({where:{month:new Date(e).getMonth()+1,year:new Date(e).getFullYear()}}),k=(y+T)*(l.deductionPercentage/100),x=y+T-k,L=await K.create({employeeId:l.id,baseSalary:y+T,commissionPercentage:l.deductionPercentage,totalSalary:Math.max(0,x),periodStart:e,periodEnd:o});i.push(L)}a.status(201).json({message:"Salaries generated successfully",salaries:i})}catch(e){console.error("Generate salaries error:",e),a.status(500).json({error:"Internal server error"})}});const W=E.Router();W.get("/",d,f(["admin","superAdmin"]),async(t,a)=>{try{const e=await _.findAll({order:[["year","DESC"],["month","DESC"]]});a.json({adminCharges:e})}catch(e){console.error("Get admin charges error:",e),a.status(500).json({error:"Internal server error"})}});W.post("/",d,f(["admin","superAdmin"]),[n.body("month").isInt({min:1,max:12}),n.body("year").isInt({min:2020}),n.body("amount").isFloat({min:0})],h,async(t,a)=>{try{const{month:e,year:o,amount:s}=t.body;if(await _.findOne({where:{month:e,year:o}}))return a.status(400).json({error:"Admin charge already exists for this month/year"});const l=await _.create({month:e,year:o,amount:s});a.status(201).json({message:"Admin charge created successfully",adminCharge:l})}catch(e){console.error("Create admin charge error:",e),a.status(500).json({error:"Internal server error"})}});W.put("/:id",d,f(["admin","superAdmin"]),[n.body("amount").isFloat({min:0})],h,async(t,a)=>{try{const{id:e}=t.params,{amount:o}=t.body,s=await _.findByPk(e);if(!s)return a.status(404).json({error:"Admin charge not found"});await s.update({amount:o}),a.json({message:"Admin charge updated successfully",adminCharge:s})}catch(e){console.error("Update admin charge error:",e),a.status(500).json({error:"Internal server error"})}});W.delete("/:id",d,f(["admin","superAdmin"]),async(t,a)=>{try{const{id:e}=t.params,o=await _.findByPk(e);if(!o)return a.status(404).json({error:"Admin charge not found"});await o.destroy(),a.json({message:"Admin charge deleted successfully"})}catch(e){console.error("Delete admin charge error:",e),a.status(500).json({error:"Internal server error"})}});const Z=E.Router();Z.get("/dashboard",d,f(["admin","superAdmin"]),async(t,a)=>{try{const e=new Date,o=e.getMonth()+1,s=e.getFullYear(),i=new Date(s,o-1,1),l=new Date(s,o,0),p=await I.sum("amount",{where:{date:{[r.Op.between]:[i,l]}}})||0,y=await b.sum("amount",{where:{date:{[r.Op.between]:[i,l]}}})||0,w=await O.sum("amount",{where:{date:{[r.Op.between]:[i,l]}}})||0,T=await K.sum("totalSalary",{where:{periodStart:{[r.Op.between]:[i,l]}}})||0,R=await _.findOne({where:{month:o,year:s}}),k=R?parseFloat(R.amount):0,x=p+y-w-T-k,D=(await c.findAll({include:[{model:I,as:"sales",where:{date:{[r.Op.between]:[i,l]}},required:!1},{model:b,as:"receipts",where:{date:{[r.Op.between]:[i,l]}},required:!1}],attributes:["id","name"]})).map(u=>({id:u.id,name:u.name,totalSales:u.sales.reduce((A,P)=>A+parseFloat(P.amount),0),totalReceipts:u.receipts.reduce((A,P)=>A+parseFloat(P.amount),0),total:u.sales.reduce((A,P)=>A+parseFloat(P.amount),0)+u.receipts.reduce((A,P)=>A+parseFloat(P.amount),0)})).sort((u,A)=>A.total-u.total).slice(0,5),B=(await S.findAll({include:[{model:I,as:"sales",where:{date:{[r.Op.between]:[i,l]}},required:!1}],attributes:["id","name","price"]})).map(u=>({id:u.id,name:u.name,price:u.price,salesCount:u.sales.length,totalRevenue:u.sales.reduce((A,P)=>A+parseFloat(P.amount),0)})).sort((u,A)=>A.salesCount-u.salesCount).slice(0,5);a.json({currentMonth:{totalSales:p,totalReceipts:y,totalExpenses:w,totalSalaries:T,totalAdminCharges:k,netProfit:x},employeePerformance:D,popularPackages:B})}catch(e){console.error("Get dashboard analytics error:",e),a.status(500).json({error:"Internal server error"})}});Z.get("/revenue",d,f(["admin","superAdmin"]),async(t,a)=>{try{const e=parseInt(t.query.months)||12,o=[];for(let s=e-1;s>=0;s--){const i=new Date;i.setMonth(i.getMonth()-s);const l=i.getMonth()+1,p=i.getFullYear(),y=new Date(p,l-1,1),w=new Date(p,l,0),T=await I.sum("amount",{where:{date:{[r.Op.between]:[y,w]}}})||0,R=await b.sum("amount",{where:{date:{[r.Op.between]:[y,w]}}})||0,k=await O.sum("amount",{where:{date:{[r.Op.between]:[y,w]}}})||0;o.push({month:`${p}-${l.toString().padStart(2,"0")}`,sales:T,receipts:R,expenses:k,totalRevenue:T+R})}a.json({revenue:o})}catch(e){console.error("Get revenue analytics error:",e),a.status(500).json({error:"Internal server error"})}});typeof PhusionPassenger<"u"&&PhusionPassenger.configure({autoInstall:!1});const m=E();m.use(oe({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],styleSrc:["'self'","'unsafe-inline'"],scriptSrc:["'self'"],imgSrc:["'self'","data:","https:"]}}}));const ge=ie({windowMs:900*1e3,max:100,message:"Too many requests from this IP, please try again later."});m.use(ge);m.use(re({origin:v.server.cors,credentials:!0}));m.use(E.urlencoded({extended:!0}));m.use(E.json({limit:"10mb"}));m.use(le({limits:{fileSize:5*1024*1024},abortOnLimit:!0}));m.use(ne());process.env.NODE_ENV==="production"&&m.use((t,a,e)=>{if(t.path.startsWith("/api"))return e();ce({cookie:!0})(t,a,e)});m.use("/uploads",E.static("uploads"));const we=G.join(process.cwd(),"dist","public");m.use(E.static(we));process.env.NODE_ENV==="production"?j.authenticate().then(()=>console.log("Database connected successfully.")).catch(t=>console.error("Database connection failed:",t)):console.log("Skipping database connection in local development mode.");const{url:Q}=v.server,Ie={swaggerDefinition:{openapi:"3.0.0",info:{title:"EasyGestion API",version:"1.0.0",description:"API pour la gestion d'un salon de coiffure"},servers:[{url:Q,description:`API Serveur - ${Q}`}],components:{securitySchemes:{bearerAuth:{type:"http",scheme:"bearer",bearerFormat:"JWT"}}},security:[{bearerAuth:[]}]},apis:["./src/routes/*.js"]},Te=ue(Ie);m.use("/api-docs",J.serve,J.setup(Te));m.use("/api/v1/auth",$);m.use("/api/v1/users",U);m.use("/api/v1/packages",V);m.use("/api/v1/sales",F);m.use("/api/v1/receipts",z);m.use("/api/v1/expenses",H);m.use("/api/v1/salaries",X);m.use("/api/v1/admin-charges",W);m.use("/api/v1/analytics",Z);m.get("/health",(t,a)=>{a.status(200).json({status:"OK",timestamp:new Date().toISOString()})});m.get("*",(t,a)=>{t.path.startsWith("/api")?a.status(404).json({error:"API endpoint not found"}):a.sendFile(G.join(process.cwd(),"index.html"))});m.use((t,a,e,o)=>{console.error(t.stack),e.status(500).json({error:"Something went wrong!"})});if(typeof PhusionPassenger<"u")m.listen("passenger");else{const{port:t,host:a}=v.server;m.listen(t,a,()=>{console.log(`🚀 Server listening on http://${a}:${t}`)})}function d(t,a,e){var i,l,p;const o=((l=(i=t.headers)==null?void 0:i.authorization)==null?void 0:l.split("Bearer ")[1])||((p=t.cookies)==null?void 0:p.accessToken);if(!o)return a.status(401).json({status:401,message:"No access token provided"});const s=fe(o);if(!s)return a.status(401).json({status:401,message:"Invalid access token"});t.user=s,t.accessToken=o,e()}function f(t){return(a,e,o)=>{if(!a.user||!t.includes(a.user.role))return e.status(403).json({status:403,message:"Insufficient permissions"});o()}}function h(t){return async(a,e,o)=>{for(let i of t)if((await i.run(a)).errors.length)break;const s=n.validationResult(a);if(!s.isEmpty())return e.status(400).json({errors:s.array()});o()}}exports.isAuthenticated=d;exports.requireRole=f;exports.validateRequest=h;
+"use strict";
+Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
+const fileUpload = require("express-fileupload");
+const csurf = require("csurf");
+const expressValidator = require("express-validator");
+const path = require("path");
+const dotenv = require("dotenv");
+const sequelize$1 = require("sequelize");
+const jwt = require("jsonwebtoken");
+require("jwt-decode");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsDoc = require("swagger-jsdoc");
+require("bcryptjs");
+const crypto = require("node:crypto");
+dotenv.config();
+const server = {
+  url: process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3e3}`,
+  host: process.env.HOST || "0.0.0.0",
+  port: process.env.PORT || 3e3,
+  secure: process.env.SECURE || false,
+  cors: process.env.CORS || ""
+};
+const database = {
+  dialect: process.env.DATABASE_DIALECT || "mysql",
+  database: process.env.DATABASE_DBNAME,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  host: process.env.DATABASE_HOST,
+  port: process.env.DATABASE_PORT,
+  ssl: process.env.DATABASE_SSL || false
+};
+const auth = {
+  accessToken: {
+    type: process.env.ACCESS_TOKEN_TYPE || "Bearer",
+    algorithm: process.env.ACCESS_TOKEN_ALGORITHM || "HS256",
+    secret: process.env.ACCESS_TOKEN_SECRET || "Acc3ssTok3nS3c3t!",
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN_MS || 60 * 60 * 1e3,
+    // 60 minutes
+    audience: process.env.ACCESS_TOKEN_AUDIENCE || "my_backend_api",
+    // Audience claim of the JWT
+    issuer: process.env.ACCESS_TOKEN_ISSUER || "my_authentication_server"
+    // Issuer claim of the JWT
+  },
+  crypto: {
+    scrypt: {
+      saltLength: process.env.SCRYPT_SALT_LENGTH || 16,
+      // 16-bytes salt
+      hashLength: process.env.SCRYPT_HASH_LENGTH || 64,
+      // 64 characters hash
+      cost: process.env.SCRYPT_COST || Math.pow(2, 17),
+      // amount of CPU/memory used
+      blockSize: process.env.SCRYPT_BLOCK_SIZE || 8,
+      // 1024 bytes memory blocks
+      parallelization: process.env.SCRYPT_PARALLELIZATION || 1,
+      // nb of concurrent threads
+      maxmem: process.env.SCRYPT_MAXMEM | 134220800
+      // maximum memory used by the algorithm. Slightly above 128MB (ie, 128 * blockSize * cost * parallelization = 134,217,728 bytes)
+    },
+    unsaltedHashAlgorithm: process.env.FAST_HASH_ALGORITHM || "sha256"
+  }
+};
+const config = {
+  auth,
+  database,
+  server
+};
+const sequelize = new sequelize$1.Sequelize(
+  config.database.database,
+  config.database.user,
+  config.database.password,
+  {
+    host: config.database.host,
+    port: config.database.port,
+    dialect: config.database.dialect,
+    ssl: config.database.ssl,
+    logging: false,
+    define: {
+      timestamps: true,
+      underscored: true
+    }
+  }
+);
+const User$1 = sequelize.define("User", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  username: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  email: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  passwordHash: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  role: {
+    type: sequelize$1.DataTypes.ENUM("superAdmin", "admin", "user"),
+    defaultValue: "user"
+  },
+  avatar: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: true
+  },
+  isActive: {
+    type: sequelize$1.DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: "users"
+});
+const Employee = sequelize.define("Employee", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  userId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "users",
+      key: "id"
+    }
+  },
+  name: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  position: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  hireDate: {
+    type: sequelize$1.DataTypes.DATE,
+    allowNull: false
+  },
+  deductionPercentage: {
+    type: sequelize$1.DataTypes.DECIMAL(5, 2),
+    defaultValue: 0
+  },
+  contract: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: true
+  },
+  employmentDeclaration: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: true
+  },
+  certification: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: true
+  }
+}, {
+  tableName: "employees"
+});
+const Package = sequelize.define("Package", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  name: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  price: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  isActive: {
+    type: sequelize$1.DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: "packages"
+});
+const Sale = sequelize.define("Sale", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  employeeId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "employees",
+      key: "id"
+    }
+  },
+  packageId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "packages",
+      key: "id"
+    }
+  },
+  clientName: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  amount: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  date: {
+    type: sequelize$1.DataTypes.DATE,
+    defaultValue: sequelize$1.DataTypes.NOW
+  },
+  description: {
+    type: sequelize$1.DataTypes.TEXT,
+    allowNull: true
+  }
+}, {
+  tableName: "sales"
+});
+const Receipt = sequelize.define("Receipt", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  employeeId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "employees",
+      key: "id"
+    }
+  },
+  clientName: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  amount: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  date: {
+    type: sequelize$1.DataTypes.DATE,
+    defaultValue: sequelize$1.DataTypes.NOW
+  },
+  description: {
+    type: sequelize$1.DataTypes.TEXT,
+    allowNull: true
+  }
+}, {
+  tableName: "receipts"
+});
+const Expense = sequelize.define("Expense", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  category: {
+    type: sequelize$1.DataTypes.STRING,
+    allowNull: false
+  },
+  amount: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  date: {
+    type: sequelize$1.DataTypes.DATE,
+    defaultValue: sequelize$1.DataTypes.NOW
+  },
+  description: {
+    type: sequelize$1.DataTypes.TEXT,
+    allowNull: true
+  },
+  createdBy: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "users",
+      key: "id"
+    }
+  }
+}, {
+  tableName: "expenses"
+});
+const Salary = sequelize.define("Salary", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  employeeId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "employees",
+      key: "id"
+    }
+  },
+  baseSalary: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  commissionPercentage: {
+    type: sequelize$1.DataTypes.DECIMAL(5, 2),
+    defaultValue: 0
+  },
+  totalSalary: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  periodStart: {
+    type: sequelize$1.DataTypes.DATE,
+    allowNull: false
+  },
+  periodEnd: {
+    type: sequelize$1.DataTypes.DATE,
+    allowNull: false
+  }
+}, {
+  tableName: "salaries"
+});
+const AdminCharge = sequelize.define("AdminCharge", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  rent: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  charges: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  operatingCosts: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  electricity: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  salaries: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  totalCharges: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  month: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false
+  },
+  year: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false
+  }
+}, {
+  tableName: "admin_charges"
+});
+const Goal = sequelize.define("Goal", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  employeeId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "employees",
+      key: "id"
+    }
+  },
+  monthlyObjective: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  dailyObjective: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  month: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false
+  },
+  year: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false
+  },
+  remainingAmount: {
+    type: sequelize$1.DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  isCompleted: {
+    type: sequelize$1.DataTypes.BOOLEAN,
+    defaultValue: false
+  }
+}, {
+  tableName: "goals"
+});
+const Alert = sequelize.define("Alert", {
+  id: {
+    type: sequelize$1.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  employeeId: {
+    type: sequelize$1.DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "employees",
+      key: "id"
+    }
+  },
+  message: {
+    type: sequelize$1.DataTypes.TEXT,
+    allowNull: false
+  },
+  type: {
+    type: sequelize$1.DataTypes.ENUM("daily", "monthly", "warning"),
+    defaultValue: "daily"
+  },
+  isRead: {
+    type: sequelize$1.DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  date: {
+    type: sequelize$1.DataTypes.DATE,
+    defaultValue: sequelize$1.DataTypes.NOW
+  }
+}, {
+  tableName: "alerts"
+});
+User$1.hasOne(Employee, { foreignKey: "userId", as: "employee" });
+User$1.hasMany(Expense, { foreignKey: "createdBy", as: "expenses" });
+Employee.belongsTo(User$1, { foreignKey: "userId", as: "user" });
+Employee.hasMany(Sale, { foreignKey: "employeeId", as: "sales" });
+Employee.hasMany(Receipt, { foreignKey: "employeeId", as: "receipts" });
+Employee.hasMany(Salary, { foreignKey: "employeeId", as: "salaries" });
+Employee.hasMany(Goal, { foreignKey: "employeeId", as: "goals" });
+Employee.hasMany(Alert, { foreignKey: "employeeId", as: "alerts" });
+Package.hasMany(Sale, { foreignKey: "packageId", as: "sales" });
+Sale.belongsTo(Employee, { foreignKey: "employeeId", as: "employee" });
+Sale.belongsTo(Package, { foreignKey: "packageId", as: "package" });
+Receipt.belongsTo(Employee, { foreignKey: "employeeId", as: "employee" });
+Expense.belongsTo(User$1, { foreignKey: "createdBy", as: "creator" });
+Salary.belongsTo(Employee, { foreignKey: "employeeId", as: "employee" });
+Goal.belongsTo(Employee, { foreignKey: "employeeId", as: "employee" });
+Alert.belongsTo(Employee, { foreignKey: "employeeId", as: "employee" });
+const { accessToken } = config.auth;
+function generateAccessToken(payload) {
+  return jwt.sign(payload, accessToken.secret, {
+    algorithm: accessToken.algorithm,
+    expiresIn: accessToken.expiresIn,
+    audience: accessToken.audience,
+    issuer: accessToken.issuer
+  });
+}
+function verifyJwtToken(token) {
+  try {
+    return jwt.verify(token, accessToken.secret, {
+      algorithms: [accessToken.algorithm],
+      audience: accessToken.audience,
+      issuer: accessToken.issuer
+    });
+  } catch (error) {
+    console.error("JWT verification failed:", error.message);
+    return null;
+  }
+}
+const { scrypt } = config.auth.crypto;
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(scrypt.saltLength).toString("hex");
+  const hash = crypto.scryptSync(password, salt, scrypt.hashLength, {
+    N: scrypt.cost,
+    r: scrypt.blockSize,
+    p: scrypt.parallelization,
+    maxmem: scrypt.maxmem
+  }).toString("hex");
+  return `${salt}:${hash}`;
+}
+async function verifyPassword(password, hashedPassword) {
+  const [salt, hash] = hashedPassword.split(":");
+  const hashVerify = crypto.scryptSync(password, salt, scrypt.hashLength, {
+    N: scrypt.cost,
+    r: scrypt.blockSize,
+    p: scrypt.parallelization,
+    maxmem: scrypt.maxmem
+  }).toString("hex");
+  return hash === hashVerify;
+}
+const router$8 = express.Router();
+router$8.post("/register", [
+  expressValidator.body("username").isLength({ min: 3 }).trim().escape(),
+  expressValidator.body("email").isEmail().normalizeEmail(),
+  expressValidator.body("password").isLength({ min: 14 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/),
+  expressValidator.body("role").optional().isIn(["superAdmin", "admin", "user"])
+], validateRequest, async (req, res) => {
+  try {
+    const { username, email, password, role = "user" } = req.body;
+    const existingUser = await User$1.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+    const passwordHash = await hashPassword(password);
+    const user = await User$1.create({
+      username,
+      email,
+      passwordHash,
+      role
+    });
+    const token = generateAccessToken({ id: user.id, username: user.username, email: user.email, role: user.role });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: { id: user.id, username: user.username, email: user.email, role: user.role },
+      token
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$8.post("/login", [
+  expressValidator.body("email").isEmail().normalizeEmail(),
+  expressValidator.body("password").notEmpty()
+], validateRequest, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User$1.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const isValidPassword = await verifyPassword(password, user.passwordHash);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const token = generateAccessToken({ id: user.id, username: user.username, email: user.email, role: user.role });
+    res.cookie("accessToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 1e3
+      // 1 hour
+    });
+    res.json({
+      message: "Login successful",
+      user: { id: user.id, username: user.username, email: user.email, role: user.role },
+      token
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$8.post("/logout", (req, res) => {
+  res.clearCookie("accessToken");
+  res.json({ message: "Logout successful" });
+});
+router$8.get("/me", isAuthenticated, async (req, res) => {
+  try {
+    const user = await User$1.findByPk(req.user.id, {
+      include: [{ model: Employee, as: "employee" }]
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        employee: user.employee
+      }
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$7 = express.Router();
+router$7.get("/", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const users = await User$1.findAll({
+      include: [{ model: Employee, as: "employee" }],
+      attributes: { exclude: ["passwordHash"] }
+    });
+    res.json({ users });
+  } catch (error) {
+    console.error("Get users error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$7.post("/", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("username").isLength({ min: 3 }).trim().escape(),
+  expressValidator.body("email").isEmail().normalizeEmail(),
+  expressValidator.body("password").isLength({ min: 14 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/),
+  expressValidator.body("name").notEmpty().trim().escape(),
+  expressValidator.body("position").notEmpty().trim().escape(),
+  expressValidator.body("hireDate").isISO8601(),
+  expressValidator.body("deductionPercentage").optional().isFloat({ min: 0, max: 100 })
+], validateRequest, async (req, res) => {
+  try {
+    const { username, email, password, name, position, hireDate, deductionPercentage = 0 } = req.body;
+    const existingUser = await User$1.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+    const passwordHash = await hashPassword(password);
+    let avatarPath = null;
+    let contractPath = null;
+    let employmentDeclarationPath = null;
+    let certificationPath = null;
+    if (req.files) {
+      const uploadDir = path.join(process.cwd(), "uploads");
+      if (req.files.avatar) {
+        const avatar = req.files.avatar;
+        avatarPath = `avatar_${Date.now()}_${avatar.name}`;
+        await avatar.mv(path.join(uploadDir, avatarPath));
+      }
+      if (req.files.contract) {
+        const contract = req.files.contract;
+        contractPath = `contract_${Date.now()}_${contract.name}`;
+        await contract.mv(path.join(uploadDir, contractPath));
+      }
+      if (req.files.employmentDeclaration) {
+        const employmentDeclaration = req.files.employmentDeclaration;
+        employmentDeclarationPath = `employment_declaration_${Date.now()}_${employmentDeclaration.name}`;
+        await employmentDeclaration.mv(path.join(uploadDir, employmentDeclarationPath));
+      }
+      if (req.files.certification) {
+        const certification = req.files.certification;
+        certificationPath = `certification_${Date.now()}_${certification.name}`;
+        await certification.mv(path.join(uploadDir, certificationPath));
+      }
+    }
+    const user = await User$1.create({
+      username,
+      email,
+      passwordHash,
+      role: "user",
+      avatar: avatarPath
+    });
+    const employee = await Employee.create({
+      userId: user.id,
+      name,
+      position,
+      hireDate,
+      deductionPercentage,
+      contract: contractPath,
+      employmentDeclaration: employmentDeclarationPath,
+      certification: certificationPath
+    });
+    res.status(201).json({
+      message: "User created successfully",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        employee
+      }
+    });
+  } catch (error) {
+    console.error("Create user error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$7.put("/:id", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("username").optional().isLength({ min: 3 }).trim().escape(),
+  expressValidator.body("email").optional().isEmail().normalizeEmail(),
+  expressValidator.body("role").optional().isIn(["superAdmin", "admin", "user"]),
+  expressValidator.body("isActive").optional().isBoolean()
+], validateRequest, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const user = await User$1.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    await user.update(updates);
+    res.json({
+      message: "User updated successfully",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive
+      }
+    });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$7.put("/:id/deduction-percentage", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("deductionPercentage").isFloat({ min: 0, max: 100 })
+], validateRequest, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deductionPercentage } = req.body;
+    const employee = await Employee.findOne({ where: { userId: id } });
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+    await employee.update({ deductionPercentage });
+    res.json({
+      message: "Deduction percentage updated successfully",
+      employee: {
+        id: employee.id,
+        userId: employee.userId,
+        deductionPercentage: employee.deductionPercentage
+      }
+    });
+  } catch (error) {
+    console.error("Update deduction percentage error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$7.delete("/:id", isAuthenticated, requireRole(["superAdmin"]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User$1.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    await user.destroy();
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$6 = express.Router();
+router$6.get("/", isAuthenticated, async (req, res) => {
+  try {
+    const packages = await Package.findAll({
+      where: { isActive: true },
+      order: [["name", "ASC"]]
+    });
+    res.json({ packages });
+  } catch (error) {
+    console.error("Get packages error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$6.post("/", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("name").notEmpty().trim().escape(),
+  expressValidator.body("price").isFloat({ min: 0 })
+], validateRequest, async (req, res) => {
+  try {
+    const { name, price } = req.body;
+    const pkg = await Package.create({
+      name,
+      price
+    });
+    res.status(201).json({
+      message: "Package created successfully",
+      package: pkg
+    });
+  } catch (error) {
+    console.error("Create package error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$6.put("/:id", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("name").optional().notEmpty().trim().escape(),
+  expressValidator.body("price").optional().isFloat({ min: 0 }),
+  expressValidator.body("isActive").optional().isBoolean()
+], validateRequest, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const pkg = await Package.findByPk(id);
+    if (!pkg) {
+      return res.status(404).json({ error: "Package not found" });
+    }
+    await pkg.update(updates);
+    res.json({
+      message: "Package updated successfully",
+      package: pkg
+    });
+  } catch (error) {
+    console.error("Update package error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$6.delete("/:id", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pkg = await Package.findByPk(id);
+    if (!pkg) {
+      return res.status(404).json({ error: "Package not found" });
+    }
+    await pkg.update({ isActive: false });
+    res.json({ message: "Package deactivated successfully" });
+  } catch (error) {
+    console.error("Delete package error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$5 = express.Router();
+router$5.get("/employee/:employeeId", isAuthenticated, async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const sales = await Sale.findAll({
+      where: { employeeId },
+      include: [
+        { model: Package, as: "package" },
+        { model: Employee, as: "employee", include: [{ model: User, as: "user" }] }
+      ],
+      order: [["date", "DESC"]]
+    });
+    res.json({ sales });
+  } catch (error) {
+    console.error("Get sales error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$5.post("/employee/:employeeId", isAuthenticated, [
+  expressValidator.body("packageId").isInt({ min: 1 }),
+  expressValidator.body("clientName").notEmpty().trim().escape(),
+  expressValidator.body("description").optional().trim().escape()
+], validateRequest, async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { packageId, clientName, description } = req.body;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee2 = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee2 || employee2.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const employee = await Employee.findByPk(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+    const pkg = await Package.findOne({ where: { id: packageId, isActive: true } });
+    if (!pkg) {
+      return res.status(404).json({ error: "Package not found or inactive" });
+    }
+    const sale = await Sale.create({
+      employeeId,
+      packageId,
+      clientName,
+      amount: pkg.price,
+      description
+    });
+    const saleWithDetails = await Sale.findByPk(sale.id, {
+      include: [
+        { model: Package, as: "package" },
+        { model: Employee, as: "employee", include: [{ model: User, as: "user" }] }
+      ]
+    });
+    res.status(201).json({
+      message: "Sale created successfully",
+      sale: saleWithDetails
+    });
+  } catch (error) {
+    console.error("Create sale error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$5.put("/employee/:employeeId/sale/:saleId", isAuthenticated, [
+  expressValidator.body("clientName").optional().notEmpty().trim().escape(),
+  expressValidator.body("amount").optional().isFloat({ min: 0 }),
+  expressValidator.body("description").optional().trim().escape()
+], validateRequest, async (req, res) => {
+  try {
+    const { employeeId, saleId } = req.params;
+    const updates = req.body;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const sale = await Sale.findOne({ where: { id: saleId, employeeId } });
+    if (!sale) {
+      return res.status(404).json({ error: "Sale not found" });
+    }
+    await sale.update(updates);
+    const updatedSale = await Sale.findByPk(saleId, {
+      include: [
+        { model: Package, as: "package" },
+        { model: Employee, as: "employee", include: [{ model: User, as: "user" }] }
+      ]
+    });
+    res.json({
+      message: "Sale updated successfully",
+      sale: updatedSale
+    });
+  } catch (error) {
+    console.error("Update sale error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$5.delete("/employee/:employeeId/sale/:saleId", isAuthenticated, async (req, res) => {
+  try {
+    const { employeeId, saleId } = req.params;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const sale = await Sale.findOne({ where: { id: saleId, employeeId } });
+    if (!sale) {
+      return res.status(404).json({ error: "Sale not found" });
+    }
+    await sale.destroy();
+    res.json({ message: "Sale deleted successfully" });
+  } catch (error) {
+    console.error("Delete sale error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$4 = express.Router();
+router$4.get("/employee/:employeeId", isAuthenticated, async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const receipts = await Receipt.findAll({
+      where: { employeeId },
+      include: [{ model: Employee, as: "employee", include: [{ model: User, as: "user" }] }],
+      order: [["date", "DESC"]]
+    });
+    res.json({ receipts });
+  } catch (error) {
+    console.error("Get receipts error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$4.post("/employee/:employeeId", isAuthenticated, [
+  expressValidator.body("clientName").notEmpty().trim().escape(),
+  expressValidator.body("amount").isFloat({ min: 0 }),
+  expressValidator.body("description").optional().trim().escape()
+], validateRequest, async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { clientName, amount, description } = req.body;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee2 = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee2 || employee2.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const employee = await Employee.findByPk(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+    const receipt = await Receipt.create({
+      employeeId,
+      clientName,
+      amount,
+      description
+    });
+    const receiptWithDetails = await Receipt.findByPk(receipt.id, {
+      include: [{ model: Employee, as: "employee", include: [{ model: User, as: "user" }] }]
+    });
+    res.status(201).json({
+      message: "Receipt added successfully",
+      receipt: receiptWithDetails
+    });
+  } catch (error) {
+    console.error("Add receipt error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$4.put("/employee/:employeeId/receipt/:receiptId", isAuthenticated, [
+  expressValidator.body("clientName").optional().notEmpty().trim().escape(),
+  expressValidator.body("amount").optional().isFloat({ min: 0 }),
+  expressValidator.body("description").optional().trim().escape()
+], validateRequest, async (req, res) => {
+  try {
+    const { employeeId, receiptId } = req.params;
+    const updates = req.body;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const receipt = await Receipt.findOne({ where: { id: receiptId, employeeId } });
+    if (!receipt) {
+      return res.status(404).json({ error: "Receipt not found" });
+    }
+    await receipt.update(updates);
+    const updatedReceipt = await Receipt.findByPk(receiptId, {
+      include: [{ model: Employee, as: "employee", include: [{ model: User, as: "user" }] }]
+    });
+    res.json({
+      message: "Receipt updated successfully",
+      receipt: updatedReceipt
+    });
+  } catch (error) {
+    console.error("Update receipt error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$4.delete("/employee/:employeeId/receipt/:receiptId", isAuthenticated, async (req, res) => {
+  try {
+    const { employeeId, receiptId } = req.params;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const receipt = await Receipt.findOne({ where: { id: receiptId, employeeId } });
+    if (!receipt) {
+      return res.status(404).json({ error: "Receipt not found" });
+    }
+    await receipt.destroy();
+    res.json({ message: "Receipt deleted successfully" });
+  } catch (error) {
+    console.error("Delete receipt error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$3 = express.Router();
+router$3.get("/", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const expenses = await Expense.findAll({
+      include: [{ model: User$1, as: "creator" }],
+      order: [["date", "DESC"]]
+    });
+    res.json({ expenses });
+  } catch (error) {
+    console.error("Get expenses error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$3.post("/", isAuthenticated, [
+  expressValidator.body("category").notEmpty().trim().escape(),
+  expressValidator.body("amount").isFloat({ min: 0 }),
+  expressValidator.body("description").optional().trim().escape()
+], validateRequest, async (req, res) => {
+  try {
+    const { category, amount, description } = req.body;
+    const expense = await Expense.create({
+      category,
+      amount,
+      description,
+      createdBy: req.user.id
+    });
+    const expenseWithCreator = await Expense.findByPk(expense.id, {
+      include: [{ model: User$1, as: "creator" }]
+    });
+    res.status(201).json({
+      message: "Expense created successfully",
+      expense: expenseWithCreator
+    });
+  } catch (error) {
+    console.error("Create expense error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$3.put("/:id", isAuthenticated, [
+  expressValidator.body("category").optional().notEmpty().trim().escape(),
+  expressValidator.body("amount").optional().isFloat({ min: 0 }),
+  expressValidator.body("description").optional().trim().escape()
+], validateRequest, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const expense = await Expense.findByPk(id);
+    if (!expense) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin" && expense.createdBy !== req.user.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await expense.update(updates);
+    const updatedExpense = await Expense.findByPk(id, {
+      include: [{ model: User$1, as: "creator" }]
+    });
+    res.json({
+      message: "Expense updated successfully",
+      expense: updatedExpense
+    });
+  } catch (error) {
+    console.error("Update expense error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$3.delete("/:id", isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findByPk(id);
+    if (!expense) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin" && expense.createdBy !== req.user.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    await expense.destroy();
+    res.json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    console.error("Delete expense error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$2 = express.Router();
+router$2.get("/employee/:employeeId", isAuthenticated, async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      const employee = await Employee.findOne({ where: { userId: req.user.id } });
+      if (!employee || employee.id != employeeId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    }
+    const salaries = await Salary.findAll({
+      where: { employeeId },
+      include: [{ model: Employee, as: "employee" }],
+      order: [["periodEnd", "DESC"]]
+    });
+    res.json({ salaries });
+  } catch (error) {
+    console.error("Get salaries error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$2.post("/generate", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("periodStart").isISO8601(),
+  expressValidator.body("periodEnd").isISO8601()
+], validateRequest, async (req, res) => {
+  try {
+    const { periodStart, periodEnd } = req.body;
+    const employees = await Employee.findAll();
+    const generatedSalaries = [];
+    for (const employee of employees) {
+      const receipts = await Receipt.findAll({
+        where: {
+          employeeId: employee.id,
+          date: {
+            [sequelize$1.Op.between]: [periodStart, periodEnd]
+          }
+        }
+      });
+      const totalReceipts = receipts.reduce((sum, receipt) => sum + parseFloat(receipt.amount), 0);
+      const sales = await Sale.findAll({
+        where: {
+          employeeId: employee.id,
+          date: {
+            [sequelize$1.Op.between]: [periodStart, periodEnd]
+          }
+        }
+      });
+      const totalSales = sales.reduce((sum, sale) => sum + parseFloat(sale.amount), 0);
+      const adminCharges = await AdminCharge.findOne({
+        where: {
+          month: new Date(periodStart).getMonth() + 1,
+          year: new Date(periodStart).getFullYear()
+        }
+      });
+      const deductionAmount = (totalReceipts + totalSales) * (employee.deductionPercentage / 100);
+      const totalSalary = totalReceipts + totalSales - deductionAmount;
+      const salary = await Salary.create({
+        employeeId: employee.id,
+        baseSalary: totalReceipts + totalSales,
+        commissionPercentage: employee.deductionPercentage,
+        totalSalary: Math.max(0, totalSalary),
+        // Ensure non-negative
+        periodStart,
+        periodEnd
+      });
+      generatedSalaries.push(salary);
+    }
+    res.status(201).json({
+      message: "Salaries generated successfully",
+      salaries: generatedSalaries
+    });
+  } catch (error) {
+    console.error("Generate salaries error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router$1 = express.Router();
+router$1.get("/", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const adminCharges = await AdminCharge.findAll({
+      order: [["year", "DESC"], ["month", "DESC"]]
+    });
+    res.json({ adminCharges });
+  } catch (error) {
+    console.error("Get admin charges error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$1.post("/", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("month").isInt({ min: 1, max: 12 }),
+  expressValidator.body("year").isInt({ min: 2020 }),
+  expressValidator.body("amount").isFloat({ min: 0 })
+], validateRequest, async (req, res) => {
+  try {
+    const { month, year, amount } = req.body;
+    const existingCharge = await AdminCharge.findOne({ where: { month, year } });
+    if (existingCharge) {
+      return res.status(400).json({ error: "Admin charge already exists for this month/year" });
+    }
+    const adminCharge = await AdminCharge.create({
+      month,
+      year,
+      amount
+    });
+    res.status(201).json({
+      message: "Admin charge created successfully",
+      adminCharge
+    });
+  } catch (error) {
+    console.error("Create admin charge error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$1.put("/:id", isAuthenticated, requireRole(["admin", "superAdmin"]), [
+  expressValidator.body("amount").isFloat({ min: 0 })
+], validateRequest, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+    const adminCharge = await AdminCharge.findByPk(id);
+    if (!adminCharge) {
+      return res.status(404).json({ error: "Admin charge not found" });
+    }
+    await adminCharge.update({ amount });
+    res.json({
+      message: "Admin charge updated successfully",
+      adminCharge
+    });
+  } catch (error) {
+    console.error("Update admin charge error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router$1.delete("/:id", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminCharge = await AdminCharge.findByPk(id);
+    if (!adminCharge) {
+      return res.status(404).json({ error: "Admin charge not found" });
+    }
+    await adminCharge.destroy();
+    res.json({ message: "Admin charge deleted successfully" });
+  } catch (error) {
+    console.error("Delete admin charge error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+const router = express.Router();
+router.get("/dashboard", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const currentDate = /* @__PURE__ */ new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+    const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+    const endOfMonth = new Date(currentYear, currentMonth, 0);
+    const totalSales = await Sale.sum("amount", {
+      where: {
+        date: {
+          [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+        }
+      }
+    }) || 0;
+    const totalReceipts = await Receipt.sum("amount", {
+      where: {
+        date: {
+          [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+        }
+      }
+    }) || 0;
+    const totalExpenses = await Expense.sum("amount", {
+      where: {
+        date: {
+          [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+        }
+      }
+    }) || 0;
+    const totalSalaries = await Salary.sum("totalSalary", {
+      where: {
+        periodStart: {
+          [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+        }
+      }
+    }) || 0;
+    const adminCharge = await AdminCharge.findOne({
+      where: { month: currentMonth, year: currentYear }
+    });
+    const totalAdminCharges = adminCharge ? parseFloat(adminCharge.amount) : 0;
+    const netProfit = totalSales + totalReceipts - totalExpenses - totalSalaries - totalAdminCharges;
+    const employeePerformance = await Employee.findAll({
+      include: [
+        {
+          model: Sale,
+          as: "sales",
+          where: {
+            date: {
+              [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+            }
+          },
+          required: false
+        },
+        {
+          model: Receipt,
+          as: "receipts",
+          where: {
+            date: {
+              [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+            }
+          },
+          required: false
+        }
+      ],
+      attributes: ["id", "name"]
+    });
+    const performanceData = employeePerformance.map((emp) => ({
+      id: emp.id,
+      name: emp.name,
+      totalSales: emp.sales.reduce((sum, sale) => sum + parseFloat(sale.amount), 0),
+      totalReceipts: emp.receipts.reduce((sum, receipt) => sum + parseFloat(receipt.amount), 0),
+      total: emp.sales.reduce((sum, sale) => sum + parseFloat(sale.amount), 0) + emp.receipts.reduce((sum, receipt) => sum + parseFloat(receipt.amount), 0)
+    })).sort((a, b) => b.total - a.total).slice(0, 5);
+    const popularPackages = await Package.findAll({
+      include: [
+        {
+          model: Sale,
+          as: "sales",
+          where: {
+            date: {
+              [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+            }
+          },
+          required: false
+        }
+      ],
+      attributes: ["id", "name", "price"]
+    });
+    const packageData = popularPackages.map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+      price: pkg.price,
+      salesCount: pkg.sales.length,
+      totalRevenue: pkg.sales.reduce((sum, sale) => sum + parseFloat(sale.amount), 0)
+    })).sort((a, b) => b.salesCount - a.salesCount).slice(0, 5);
+    res.json({
+      currentMonth: {
+        totalSales,
+        totalReceipts,
+        totalExpenses,
+        totalSalaries,
+        totalAdminCharges,
+        netProfit
+      },
+      employeePerformance: performanceData,
+      popularPackages: packageData
+    });
+  } catch (error) {
+    console.error("Get dashboard analytics error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router.get("/revenue", isAuthenticated, requireRole(["admin", "superAdmin"]), async (req, res) => {
+  try {
+    const months = parseInt(req.query.months) || 12;
+    const data = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const date = /* @__PURE__ */ new Date();
+      date.setMonth(date.getMonth() - i);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0);
+      const sales = await Sale.sum("amount", {
+        where: {
+          date: {
+            [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+          }
+        }
+      }) || 0;
+      const receipts = await Receipt.sum("amount", {
+        where: {
+          date: {
+            [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+          }
+        }
+      }) || 0;
+      const expenses = await Expense.sum("amount", {
+        where: {
+          date: {
+            [sequelize$1.Op.between]: [startOfMonth, endOfMonth]
+          }
+        }
+      }) || 0;
+      data.push({
+        month: `${year}-${month.toString().padStart(2, "0")}`,
+        sales,
+        receipts,
+        expenses,
+        totalRevenue: sales + receipts
+      });
+    }
+    res.json({ revenue: data });
+  } catch (error) {
+    console.error("Get revenue analytics error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+if (typeof PhusionPassenger !== "undefined") {
+  PhusionPassenger.configure({ autoInstall: false });
+}
+const app = express();
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"]
+    }
+  }
+}));
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1e3,
+  // 15 minutes
+  max: 100,
+  // limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later."
+});
+app.use(limiter);
+app.use(cors({
+  origin: config.server.cors,
+  credentials: true
+}));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(fileUpload({
+  limits: { fileSize: 5 * 1024 * 1024 },
+  // 5MB
+  abortOnLimit: true
+}));
+app.use(cookieParser());
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    csurf({ cookie: true })(req, res, next);
+  });
+}
+app.use("/uploads", express.static("uploads"));
+const frontendPath = path.join(process.cwd(), "dist", "public");
+app.use(express.static(frontendPath));
+if (process.env.NODE_ENV === "production") {
+  sequelize.authenticate().then(() => console.log("Database connected successfully.")).catch((err) => console.error("Database connection failed:", err));
+} else {
+  console.log("Skipping database connection in local development mode.");
+}
+const { url } = config.server;
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: "3.0.0",
+    info: {
+      title: "EasyGestion API",
+      version: "1.0.0",
+      description: "API pour la gestion d'un salon de coiffure"
+    },
+    servers: [
+      {
+        url,
+        description: `API Serveur - ${url}`
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT"
+        }
+      }
+    },
+    security: [{
+      bearerAuth: []
+    }]
+  },
+  apis: ["./src/routes/*.js"]
+};
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use("/api/v1/auth", router$8);
+app.use("/api/v1/users", router$7);
+app.use("/api/v1/packages", router$6);
+app.use("/api/v1/sales", router$5);
+app.use("/api/v1/receipts", router$4);
+app.use("/api/v1/expenses", router$3);
+app.use("/api/v1/salaries", router$2);
+app.use("/api/v1/admin-charges", router$1);
+app.use("/api/v1/analytics", router);
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+});
+app.get("*", (req, res) => {
+  if (!req.path.startsWith("/api")) {
+    res.sendFile(path.join(process.cwd(), "index.html"));
+  } else {
+    res.status(404).json({ error: "API endpoint not found" });
+  }
+});
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Something went wrong!" });
+});
+if (typeof PhusionPassenger !== "undefined") {
+  app.listen("passenger");
+} else {
+  const { port, host } = config.server;
+  app.listen(port, host, () => {
+    console.log(`🚀 Server listening on http://${host}:${port}`);
+  });
+}
+function isAuthenticated(req, res, next) {
+  var _a, _b, _c;
+  const accessToken2 = ((_b = (_a = req.headers) == null ? void 0 : _a["authorization"]) == null ? void 0 : _b.split("Bearer ")[1]) || ((_c = req.cookies) == null ? void 0 : _c.accessToken);
+  if (!accessToken2) {
+    return res.status(401).json({ status: 401, message: "No access token provided" });
+  }
+  const decodedToken = verifyJwtToken(accessToken2);
+  if (!decodedToken) {
+    return res.status(401).json({ status: 401, message: "Invalid access token" });
+  }
+  req.user = decodedToken;
+  req.accessToken = accessToken2;
+  next();
+}
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ status: 403, message: "Insufficient permissions" });
+    }
+    next();
+  };
+}
+function validateRequest(validations) {
+  return async (req, res, next) => {
+    for (let validation of validations) {
+      const result = await validation.run(req);
+      if (result.errors.length) break;
+    }
+    const errors = expressValidator.validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  };
+}
+exports.isAuthenticated = isAuthenticated;
+exports.requireRole = requireRole;
+exports.validateRequest = validateRequest;
