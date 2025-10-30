@@ -14,7 +14,6 @@ import sequelize from "./models/index.js";
 import './models/associations.js';
 
 import { verifyJwtToken } from "./lib/tokens.js";
-import { jwtDecode } from "jwt-decode";
 
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc';

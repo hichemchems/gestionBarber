@@ -12,10 +12,8 @@ const path = require("path");
 const dotenv = require("dotenv");
 const sequelize$1 = require("sequelize");
 const jwt = require("jsonwebtoken");
-require("jwt-decode");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
-require("bcryptjs");
 const crypto = require("node:crypto");
 dotenv.config();
 const server = {

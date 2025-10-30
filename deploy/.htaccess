@@ -1,6 +1,6 @@
 # Configuration pour o2switch - Application Node.js
 PassengerEnabled On
-PassengerAppRoot /home/dije1636/public_html/gestionBarber/deploy
+PassengerAppRoot /home/dije1636/gestionBarber/deploy
 PassengerAppType node
 PassengerStartupFile dist/server.cjs
 PassengerAppEnv production
