@@ -2,7 +2,7 @@
 PassengerEnabled On
 PassengerAppRoot /home/dije1636/gestionBarber/deploy
 PassengerAppType node
-PassengerStartupFile dist/server.cjs
+PassengerStartupFile dist/server-minimal.cjs
 PassengerAppEnv production
 
 # Redirections pour SPA
