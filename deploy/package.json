@@ -1,6 +1,6 @@
 {
 	"scripts": {
-		"start": "node dist/server-minimal.cjs"
+		"start": "node dist/server-ultra-minimal.cjs"
 	},
 	"dependencies": {
 		"express": "^4.21.2",

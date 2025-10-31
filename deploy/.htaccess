@@ -1,8 +1,8 @@
-# Configuration pour o2switch - Application Node.js
+# Configuration pour o2switch - Application Node.js ULTRA MINIMAL
 PassengerEnabled On
 PassengerAppRoot /home/dije1636/gestionBarber/deploy
 PassengerAppType node
-PassengerStartupFile dist/server-minimal.cjs
+PassengerStartupFile dist/server-ultra-minimal.cjs
 PassengerAppEnv production
 
 # Redirections pour SPA
